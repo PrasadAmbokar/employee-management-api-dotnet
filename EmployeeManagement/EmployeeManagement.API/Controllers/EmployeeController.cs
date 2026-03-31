@@ -1,28 +1,32 @@
-﻿using EmployeeManagement.API.Models;
-using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Mvc;
+using EmployeeManagement.API.Models;
+using EmployeeManagement.API.Data;
+using Microsoft.EntityFrameworkCore;
 
 namespace EmployeeManagement.API.Controllers
 {
-    [Route("api/[controller]")]
     [ApiController]
+    [Route("api/[controller]")]
     public class EmployeeController : ControllerBase
     {
-        private static List<Employee> employees = new List<Employee>()
+        private readonly AppDbContext _context;
+
+        public EmployeeController(AppDbContext context)
         {
-            new Employee { Id = 1, Name = "Prasad", Department = "IT", Salary = 50000 }
-        };
+            _context = context;
+        }
 
         [HttpGet]
-        public IActionResult GetAll()
+        public async Task<IActionResult> GetAll()
         {
+            var employees = await _context.Employees.ToListAsync();
             return Ok(employees);
         }
 
         [HttpGet("{id}")]
-        public IActionResult GetById(int id)
+        public async Task<IActionResult> GetById(int id)
         {
-            var emp = employees.FirstOrDefault(e => e.Id == id);
+            var emp = await _context.Employees.FindAsync(id);
             if (emp == null)
                 return NotFound();
 
@@ -30,17 +34,17 @@ namespace EmployeeManagement.API.Controllers
         }
 
         [HttpPost]
-        public IActionResult Add(Employee emp)
+        public async Task<IActionResult> Add(Employee emp)
         {
-            emp.Id = employees.Max(e => e.Id) + 1;
-            employees.Add(emp);
+            await _context.Employees.AddAsync(emp);
+            await _context.SaveChangesAsync();
             return Ok(emp);
         }
 
         [HttpPut("{id}")]
-        public IActionResult Update(int id, Employee updatedEmp)
+        public async Task<IActionResult> Update(int id, Employee updatedEmp)
         {
-            var emp = employees.FirstOrDefault(e => e.Id == id);
+            var emp = await _context.Employees.FindAsync(id);
             if (emp == null)
                 return NotFound();
 
@@ -48,17 +52,20 @@ namespace EmployeeManagement.API.Controllers
             emp.Department = updatedEmp.Department;
             emp.Salary = updatedEmp.Salary;
 
+            await _context.SaveChangesAsync();
             return Ok(emp);
         }
 
         [HttpDelete("{id}")]
-        public IActionResult Delete(int id)
+        public async Task<IActionResult> Delete(int id)
         {
-            var emp = employees.FirstOrDefault(e => e.Id == id);
+            var emp = await _context.Employees.FindAsync(id);
             if (emp == null)
                 return NotFound();
 
-            employees.Remove(emp);
+            _context.Employees.Remove(emp);
+            await _context.SaveChangesAsync();
+
             return Ok();
         }
     }
