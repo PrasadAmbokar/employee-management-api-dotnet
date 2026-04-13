@@ -68,5 +68,18 @@ namespace EmployeeManagement.API.Controllers
 
             return Ok();
         }
+        [HttpGet("check-db")]
+        public IActionResult CheckDb([FromServices] AppDbContext context)
+        {
+            try
+            {
+                var count = context.Employees.Count();
+                return Ok($"DB Connected. Employees count: {count}");
+            }
+            catch (Exception ex)
+            {
+                return BadRequest($"Error: {ex.Message}");
+            }
+        }
     }
 }
